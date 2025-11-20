@@ -162,6 +162,31 @@ function drawPatrol(x, y, scale) {
   const baseX = 0;
   const baseY = 0;
 
+  // Valores de postura
+  const leanSide = (gameState.keys.right ? 1 : 0) - (gameState.keys.left ? 1 : 0);
+  const forwardLean = gameState.keys.down ? 1 : 0;
+  const brakeLean = gameState.keys.up ? 1 : 0;
+
+  let bodyAngle = leanSide * 0.22 + forwardLean * 0.15 - brakeLean * 0.08;
+  bodyAngle = clamp(bodyAngle, -0.45, 0.45);
+  const bodyOffsetY = forwardLean * 2 - brakeLean * 3;
+  const bodyOffsetX = leanSide * 1.5;
+
+  const armSpreadBase = 11;
+  const armSpread = armSpreadBase + (brakeLean ? 4 : 0) - (forwardLean ? 3 : 0);
+  const armLift = (brakeLean ? -1 : 0) + (forwardLean ? 3 : 0);
+  const shoulderY = -bodyHeight + 8;
+
+  const poleLength = 34;
+  let poleForwardBias = 0;
+  if (gameState.keys.up) {
+    poleForwardBias = 0.9;
+  } else if (gameState.keys.down) {
+    poleForwardBias = -0.55;
+  }
+  const poleAngleLeft = -2 + poleForwardBias + leanSide * 0.25;
+  const poleAngleRight = -1 + poleForwardBias + leanSide * 0.25;
+
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(scale, scale);
@@ -212,38 +237,72 @@ function drawPatrol(x, y, scale) {
     ctx.lineWidth = 6;
     ctx.lineCap = "round";
 
+    const skiSpread = gameState.keys.down ? 6 : 8;
+
     // Esquí izquierdo
     ctx.beginPath();
-    ctx.moveTo(-8, -2);
-    ctx.lineTo(-8, 26);
+    ctx.moveTo(-skiSpread, -2);
+    ctx.lineTo(-skiSpread, 26);
     ctx.stroke();
 
     // Esquí derecho (ligeramente separado)
     ctx.beginPath();
-    ctx.moveTo(8, -2);
-    ctx.lineTo(8, 26);
+    ctx.moveTo(skiSpread, -2);
+    ctx.lineTo(skiSpread, 26);
     ctx.stroke();
   }
 
   ctx.restore();
 
-  // BASTONES (opcionales, hacia atrás)
+  // CUERPO + EQUIPO
   ctx.save();
-  ctx.strokeStyle = "rgba(15, 23, 42, 0.7)";
+  ctx.translate(baseX + bodyOffsetX, baseY + bodyOffsetY);
+  ctx.rotate(bodyAngle);
+
+  // BASTONES + BRAZOS
+  ctx.save();
+  ctx.strokeStyle = "rgba(15, 23, 42, 0.75)";
   ctx.lineWidth = 2;
+
+  const leftHand = {
+    x: -armSpread - leanSide * 2,
+    y: shoulderY + 6 + armLift,
+  };
+  const rightHand = {
+    x: armSpread - leanSide * 2,
+    y: shoulderY + 6 + armLift,
+  };
+  const leftShoulder = { x: -6, y: shoulderY };
+  const rightShoulder = { x: 6, y: shoulderY };
+
+  // brazos
+  ctx.beginPath();
+  ctx.moveTo(leftShoulder.x, leftShoulder.y);
+  ctx.lineTo(leftHand.x, leftHand.y);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(rightShoulder.x, rightShoulder.y);
+  ctx.lineTo(rightHand.x, rightHand.y);
+  ctx.stroke();
 
   // bastón izquierdo
   ctx.beginPath();
-  ctx.moveTo(baseX - 8, baseY + 2);
-  ctx.lineTo(baseX - 18, baseY - 20);
+  ctx.moveTo(leftHand.x, leftHand.y);
+  ctx.lineTo(
+    leftHand.x + Math.cos(poleAngleLeft) * poleLength,
+    leftHand.y + Math.sin(poleAngleLeft) * poleLength
+  );
   ctx.stroke();
 
   // bastón derecho
   ctx.beginPath();
-  ctx.moveTo(baseX + 8, baseY + 4);
-  ctx.lineTo(baseX + 18, baseY - 18);
+  ctx.moveTo(rightHand.x, rightHand.y);
+  ctx.lineTo(
+    rightHand.x + Math.cos(poleAngleRight) * poleLength,
+    rightHand.y + Math.sin(poleAngleRight) * poleLength
+  );
   ctx.stroke();
-
   ctx.restore();
 
   // MOCHILA
@@ -307,21 +366,23 @@ function drawPatrol(x, y, scale) {
   // PIERNAS / PANTALÓN
   ctx.save();
   ctx.fillStyle = "#111827";
+  const legGap = gameState.keys.up ? 14 : gameState.keys.down ? 9 : 12;
+  const legOffset = leanSide * 1.5;
   if (typeof ctx.roundRect === "function") {
     ctx.beginPath();
-    ctx.roundRect(baseX - 10, baseY - 4, 8, 12, 3); // pierna izq
-    ctx.roundRect(baseX + 2, baseY - 4, 8, 12, 3); // pierna der
+    ctx.roundRect(baseX - legGap / 2 - 4 + legOffset, baseY - 4, 8, 12, 3); // pierna izq
+    ctx.roundRect(baseX + legGap / 2 - 4 + legOffset, baseY - 4, 8, 12, 3); // pierna der
     ctx.fill();
   } else {
-    ctx.fillRect(baseX - 10, baseY - 4, 8, 12);
-    ctx.fillRect(baseX + 2, baseY - 4, 8, 12);
+    ctx.fillRect(baseX - legGap / 2 - 4 + legOffset, baseY - 4, 8, 12);
+    ctx.fillRect(baseX + legGap / 2 - 4 + legOffset, baseY - 4, 8, 12);
   }
   ctx.restore();
 
   // CASCO
   ctx.save();
   const headRadius = 10;
-  const headCenterY = baseY - bodyHeight - 8;
+  const headCenterY = baseY - bodyHeight - 8 + forwardLean * 2 - brakeLean * 1.5;
 
   // casco base
   ctx.beginPath();
@@ -348,6 +409,7 @@ function drawPatrol(x, y, scale) {
   ctx.fillStyle = "rgba(248, 250, 252, 0.6)";
   ctx.fillRect(baseX - 6, headCenterY + 3, 5, 2);
 
+  ctx.restore();
   ctx.restore();
   ctx.restore();
 }
