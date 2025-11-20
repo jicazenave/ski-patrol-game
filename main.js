@@ -22,9 +22,13 @@ const gameState = {
   patrolSpeed: 5,
   patrolWidth: 28,
   patrolHeight: 42,
+  patrolMinY: slopeConfig.topY + 40,
+  patrolMaxY: slopeConfig.bottomY - 20,
   keys: {
     left: false,
     right: false,
+    up: false,
+    down: false,
   },
   scrollOffset: 0,
   scrollSpeed: 3,
@@ -143,16 +147,30 @@ function drawSnowLines() {
   }
 }
 
-function drawPatrol(x, y) {
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function drawPatrol(x, y, scale) {
   // Tamaños base
   const bodyWidth = 22;
   const bodyHeight = 28;
+  const baseX = 0;
+  const baseY = 0;
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
 
   // SOMBRA (debajo de los esquís)
   ctx.save();
   ctx.fillStyle = "rgba(15, 23, 42, 0.35)";
   ctx.beginPath();
-  ctx.ellipse(x, y + 18, 26, 8, 0, 0, Math.PI * 2);
+  ctx.ellipse(baseX, baseY + 18, 26, 8, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 
@@ -165,7 +183,7 @@ function drawPatrol(x, y) {
     skiAngle = -0.45;
   }
 
-  ctx.translate(x, y + 10);
+  ctx.translate(baseX, baseY + 10);
   ctx.rotate(skiAngle);
   ctx.strokeStyle = "#0f172a";
   ctx.lineWidth = 6;
@@ -192,14 +210,14 @@ function drawPatrol(x, y) {
 
   // bastón izquierdo
   ctx.beginPath();
-  ctx.moveTo(x - 8, y + 2);
-  ctx.lineTo(x - 18, y - 20);
+  ctx.moveTo(baseX - 8, baseY + 2);
+  ctx.lineTo(baseX - 18, baseY - 20);
   ctx.stroke();
 
   // bastón derecho
   ctx.beginPath();
-  ctx.moveTo(x + 8, y + 4);
-  ctx.lineTo(x + 18, y - 18);
+  ctx.moveTo(baseX + 8, baseY + 4);
+  ctx.lineTo(baseX + 18, baseY - 18);
   ctx.stroke();
 
   ctx.restore();
@@ -209,10 +227,10 @@ function drawPatrol(x, y) {
   ctx.fillStyle = "#1e293b";
   if (typeof ctx.roundRect === "function") {
     ctx.beginPath();
-    ctx.roundRect(x - bodyWidth / 2 - 4, y - bodyHeight - 2, 10, 18, 4);
+    ctx.roundRect(baseX - bodyWidth / 2 - 4, baseY - bodyHeight - 2, 10, 18, 4);
     ctx.fill();
   } else {
-    ctx.fillRect(x - bodyWidth / 2 - 4, y - bodyHeight - 2, 10, 18);
+    ctx.fillRect(baseX - bodyWidth / 2 - 4, baseY - bodyHeight - 2, 10, 18);
   }
   ctx.restore();
 
@@ -222,8 +240,8 @@ function drawPatrol(x, y) {
   if (typeof ctx.roundRect === "function") {
     ctx.beginPath();
     ctx.roundRect(
-      x - bodyWidth / 2,
-      y - bodyHeight,
+      baseX - bodyWidth / 2,
+      baseY - bodyHeight,
       bodyWidth,
       bodyHeight,
       6
@@ -231,8 +249,8 @@ function drawPatrol(x, y) {
     ctx.fill();
   } else {
     ctx.fillRect(
-      x - bodyWidth / 2,
-      y - bodyHeight,
+      baseX - bodyWidth / 2,
+      baseY - bodyHeight,
       bodyWidth,
       bodyHeight
     );
@@ -242,8 +260,8 @@ function drawPatrol(x, y) {
   ctx.fillStyle = "#f9fafb";
   const crossWidth = 12;
   const crossThick = 4;
-  const cx = x;
-  const cy = y - bodyHeight / 2;
+  const cx = baseX;
+  const cy = baseY - bodyHeight / 2;
 
   // vertical
   ctx.fillRect(
@@ -267,45 +285,46 @@ function drawPatrol(x, y) {
   ctx.fillStyle = "#111827";
   if (typeof ctx.roundRect === "function") {
     ctx.beginPath();
-    ctx.roundRect(x - 10, y - 4, 8, 12, 3); // pierna izq
-    ctx.roundRect(x + 2, y - 4, 8, 12, 3); // pierna der
+    ctx.roundRect(baseX - 10, baseY - 4, 8, 12, 3); // pierna izq
+    ctx.roundRect(baseX + 2, baseY - 4, 8, 12, 3); // pierna der
     ctx.fill();
   } else {
-    ctx.fillRect(x - 10, y - 4, 8, 12);
-    ctx.fillRect(x + 2, y - 4, 8, 12);
+    ctx.fillRect(baseX - 10, baseY - 4, 8, 12);
+    ctx.fillRect(baseX + 2, baseY - 4, 8, 12);
   }
   ctx.restore();
 
   // CASCO
   ctx.save();
   const headRadius = 10;
-  const headCenterY = y - bodyHeight - 8;
+  const headCenterY = baseY - bodyHeight - 8;
 
   // casco base
   ctx.beginPath();
-  ctx.arc(x, headCenterY, headRadius, Math.PI, 0);
+  ctx.arc(baseX, headCenterY, headRadius, Math.PI, 0);
   ctx.closePath();
   ctx.fillStyle = "#0f172a";
   ctx.fill();
 
   // franja del casco
   ctx.fillStyle = "#dc2626";
-  ctx.fillRect(x - headRadius, headCenterY - 1, headRadius * 2, 4);
+  ctx.fillRect(baseX - headRadius, headCenterY - 1, headRadius * 2, 4);
 
   // gafas / visera
   ctx.fillStyle = "#38bdf8";
   if (typeof ctx.roundRect === "function") {
     ctx.beginPath();
-    ctx.roundRect(x - 9, headCenterY + 2, 18, 6, 3);
+    ctx.roundRect(baseX - 9, headCenterY + 2, 18, 6, 3);
     ctx.fill();
   } else {
-    ctx.fillRect(x - 9, headCenterY + 2, 18, 6);
+    ctx.fillRect(baseX - 9, headCenterY + 2, 18, 6);
   }
 
   // pequeño brillo
   ctx.fillStyle = "rgba(248, 250, 252, 0.6)";
-  ctx.fillRect(x - 6, headCenterY + 3, 5, 2);
+  ctx.fillRect(baseX - 6, headCenterY + 3, 5, 2);
 
+  ctx.restore();
   ctx.restore();
 }
 
@@ -324,7 +343,14 @@ function drawScene() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawBackground();
   drawSnowLines();
-  drawPatrol(gameState.patrolX, gameState.patrolY);
+  const t = clamp(
+    (gameState.patrolY - gameState.patrolMinY) /
+      (gameState.patrolMaxY - gameState.patrolMinY),
+    0,
+    1
+  );
+  const scale = lerp(0.7, 1.1, t);
+  drawPatrol(gameState.patrolX, gameState.patrolY, scale);
   drawOverlay();
 }
 
@@ -338,13 +364,39 @@ function update() {
     gameState.patrolX += gameState.patrolSpeed;
   }
 
-  const { leftX, rightX } = getSlopeBoundsAtY(gameState.patrolY);
-  const halfWidth = gameState.patrolWidth / 2;
-  if (gameState.patrolX - halfWidth < leftX) {
-    gameState.patrolX = leftX + halfWidth;
+  if (gameState.keys.up) {
+    gameState.patrolY -= gameState.patrolSpeed;
   }
-  if (gameState.patrolX + halfWidth > rightX) {
-    gameState.patrolX = rightX - halfWidth;
+  if (gameState.keys.down) {
+    gameState.patrolY += gameState.patrolSpeed;
+  }
+
+  gameState.patrolY = clamp(
+    gameState.patrolY,
+    gameState.patrolMinY,
+    gameState.patrolMaxY
+  );
+
+  const depthT = clamp(
+    (gameState.patrolY - gameState.patrolMinY) /
+      (gameState.patrolMaxY - gameState.patrolMinY),
+    0,
+    1
+  );
+
+  const { leftX, rightX } = getSlopeBoundsAtY(gameState.patrolY);
+  const widthAdjustment = lerp(0.75, 1, depthT);
+  const adjustedHalfRange = ((rightX - leftX) / 2) * widthAdjustment;
+  const centerX = slopeConfig.centerX;
+  const adjustedLeft = centerX - adjustedHalfRange;
+  const adjustedRight = centerX + adjustedHalfRange;
+
+  const halfWidth = gameState.patrolWidth / 2;
+  if (gameState.patrolX - halfWidth < adjustedLeft) {
+    gameState.patrolX = adjustedLeft + halfWidth;
+  }
+  if (gameState.patrolX + halfWidth > adjustedRight) {
+    gameState.patrolX = adjustedRight - halfWidth;
   }
 
   gameState.scrollOffset = (gameState.scrollOffset + gameState.scrollSpeed) % (slopeConfig.bottomY - slopeConfig.topY);
@@ -372,6 +424,12 @@ function handleKeyDown(event) {
   if (event.key === "ArrowRight" || event.key === "d" || event.key === "D") {
     gameState.keys.right = true;
   }
+  if (event.key === "ArrowUp" || event.key === "w" || event.key === "W") {
+    gameState.keys.up = true;
+  }
+  if (event.key === "ArrowDown" || event.key === "s" || event.key === "S") {
+    gameState.keys.down = true;
+  }
 }
 
 function handleKeyUp(event) {
@@ -381,11 +439,18 @@ function handleKeyUp(event) {
   if (event.key === "ArrowRight" || event.key === "d" || event.key === "D") {
     gameState.keys.right = false;
   }
+  if (event.key === "ArrowUp" || event.key === "w" || event.key === "W") {
+    gameState.keys.up = false;
+  }
+  if (event.key === "ArrowDown" || event.key === "s" || event.key === "S") {
+    gameState.keys.down = false;
+  }
 }
 
 startButton.addEventListener("click", () => {
   gameState.running = true;
-  statusText.textContent = "¡Rescate en curso! Usa ← → para moverte";
+  statusText.textContent =
+    "¡Rescate en curso! Usa ← → / A D y ↑ ↓ / W S para moverte";
 });
 
 window.addEventListener("keydown", handleKeyDown);
