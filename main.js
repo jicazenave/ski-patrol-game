@@ -176,30 +176,54 @@ function drawPatrol(x, y, scale) {
 
   // ESQUÍS
   ctx.save();
-  let skiAngle = 0;
-  if (gameState.keys.left) {
-    skiAngle = 0.45;
-  } else if (gameState.keys.right) {
-    skiAngle = -0.45;
+  if (gameState.keys.up) {
+    // Modo cuña: puntas casi juntas (abajo), colas abiertas
+    ctx.translate(baseX, baseY + 10);
+    ctx.strokeStyle = "#0f172a";
+    ctx.lineWidth = 6;
+    ctx.lineCap = "round";
+
+    const tailWidth = 18;
+    const tipLength = 22;
+    const tipGap = 3; // pequeña separación entre puntas
+
+    // Esquí izquierdo
+    ctx.beginPath();
+    ctx.moveTo(-tailWidth, 0); // cola abierta
+    ctx.lineTo(-tipGap, tipLength); // punta casi al centro (abajo)
+    ctx.stroke();
+
+    // Esquí derecho
+    ctx.beginPath();
+    ctx.moveTo(tailWidth, 0); // cola abierta
+    ctx.lineTo(tipGap, tipLength); // punta casi al centro (abajo)
+    ctx.stroke();
+  } else {
+    let skiAngle = 0;
+    if (gameState.keys.left) {
+      skiAngle = 0.45;
+    } else if (gameState.keys.right) {
+      skiAngle = -0.45;
+    }
+
+    ctx.translate(baseX, baseY + 10);
+    ctx.rotate(skiAngle);
+    ctx.strokeStyle = "#0f172a";
+    ctx.lineWidth = 6;
+    ctx.lineCap = "round";
+
+    // Esquí izquierdo
+    ctx.beginPath();
+    ctx.moveTo(-8, -2);
+    ctx.lineTo(-8, 26);
+    ctx.stroke();
+
+    // Esquí derecho (ligeramente separado)
+    ctx.beginPath();
+    ctx.moveTo(8, -2);
+    ctx.lineTo(8, 26);
+    ctx.stroke();
   }
-
-  ctx.translate(baseX, baseY + 10);
-  ctx.rotate(skiAngle);
-  ctx.strokeStyle = "#0f172a";
-  ctx.lineWidth = 6;
-  ctx.lineCap = "round";
-
-  // Esquí izquierdo
-  ctx.beginPath();
-  ctx.moveTo(-8, -2);
-  ctx.lineTo(-8, 18);
-  ctx.stroke();
-
-  // Esquí derecho (ligeramente separado)
-  ctx.beginPath();
-  ctx.moveTo(8, -2);
-  ctx.lineTo(8, 18);
-  ctx.stroke();
 
   ctx.restore();
 
