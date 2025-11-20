@@ -177,25 +177,26 @@ function drawPatrol(x, y, scale) {
   // ESQUÍS
   ctx.save();
   if (gameState.keys.up) {
-    // Modo cuña: puntas juntas (abajo), colas abiertas
+    // Modo cuña: puntas casi juntas (abajo), colas abiertas
     ctx.translate(baseX, baseY + 10);
     ctx.strokeStyle = "#0f172a";
     ctx.lineWidth = 6;
     ctx.lineCap = "round";
 
     const tailWidth = 18;
-    const tipLength = 16;
+    const tipLength = 22;
+    const tipGap = 3; // pequeña separación entre puntas
 
     // Esquí izquierdo
     ctx.beginPath();
     ctx.moveTo(-tailWidth, 0); // cola abierta
-    ctx.lineTo(0, tipLength); // punta al centro (abajo)
+    ctx.lineTo(-tipGap, tipLength); // punta casi al centro (abajo)
     ctx.stroke();
 
     // Esquí derecho
     ctx.beginPath();
     ctx.moveTo(tailWidth, 0); // cola abierta
-    ctx.lineTo(0, tipLength); // punta al centro (abajo)
+    ctx.lineTo(tipGap, tipLength); // punta casi al centro (abajo)
     ctx.stroke();
   } else {
     let skiAngle = 0;
@@ -214,13 +215,13 @@ function drawPatrol(x, y, scale) {
     // Esquí izquierdo
     ctx.beginPath();
     ctx.moveTo(-8, -2);
-    ctx.lineTo(-8, 18);
+    ctx.lineTo(-8, 26);
     ctx.stroke();
 
     // Esquí derecho (ligeramente separado)
     ctx.beginPath();
     ctx.moveTo(8, -2);
-    ctx.lineTo(8, 18);
+    ctx.lineTo(8, 26);
     ctx.stroke();
   }
 
