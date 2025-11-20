@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rescate Exprés – Patrulla de Ski</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Rescate Exprés – Patrulla de Ski</h1>
+    <p>Versión base del juego con Canvas listo para iterar.</p>
+  </header>
+
+  <main>
+    <section class="controls">
+      <button id="startButton" type="button">Iniciar juego</button>
+    </section>
+
+    <section class="canvas-wrapper">
+      <canvas id="gameCanvas" width="480" height="640" aria-label="Área de juego"></canvas>
+    </section>
+
+    <section class="status" aria-live="polite">
+      <p id="statusText">Presiona "Iniciar juego" para comenzar.</p>
+    </section>
+  </main>
+
+  <script src="main.js"></script>
+</body>
+</html>
