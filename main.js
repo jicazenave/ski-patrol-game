@@ -168,7 +168,8 @@ function drawPatrol(x, y) {
   ctx.translate(x, y + 10);
   ctx.rotate(skiAngle);
   ctx.strokeStyle = "#0f172a";
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 6;
+  ctx.lineCap = "round";
 
   // Esquí izquierdo
   ctx.beginPath();
