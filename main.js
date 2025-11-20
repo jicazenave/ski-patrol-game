@@ -158,19 +158,29 @@ function drawPatrol(x, y) {
 
   // ESQUÍS
   ctx.save();
+  let skiAngle = 0;
+  if (gameState.keys.left) {
+    skiAngle = 0.45;
+  } else if (gameState.keys.right) {
+    skiAngle = -0.45;
+  }
+
+  ctx.translate(x, y + 10);
+  ctx.rotate(skiAngle);
   ctx.strokeStyle = "#0f172a";
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 6;
+  ctx.lineCap = "round";
 
   // Esquí izquierdo
   ctx.beginPath();
-  ctx.moveTo(x - 20, y + 12);
-  ctx.lineTo(x + 18, y + 20);
+  ctx.moveTo(-8, -2);
+  ctx.lineTo(-8, 18);
   ctx.stroke();
 
   // Esquí derecho (ligeramente separado)
   ctx.beginPath();
-  ctx.moveTo(x - 22, y + 16);
-  ctx.lineTo(x + 16, y + 24);
+  ctx.moveTo(8, -2);
+  ctx.lineTo(8, 18);
   ctx.stroke();
 
   ctx.restore();
