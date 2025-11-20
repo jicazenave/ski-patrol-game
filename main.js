@@ -1,62 +1,222 @@
+// main.js
+// Primer prototipo de gameplay:
+// - Dibuja fondo, patrulla y banderas.
+// - Con el botón "Iniciar juego" se activa un loop.
+// - Con las flechas ← → mueves al patrulla.
+
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
+
 const startButton = document.getElementById("startButton");
 const statusText = document.getElementById("statusText");
 
+// Estado del juego
 const gameState = {
   running: false,
-  patrol: { x: canvas.width / 2 - 15, y: 60, width: 30, height: 30 },
-  target: { x: canvas.width / 2 - 12, y: canvas.height - 120, size: 24 },
+  patrolX: canvas.width * 0.3,
+  patrolY: canvas.height * 0.55,
+  patrolSpeed: 5,
+  keys: {
+    left: false,
+    right: false,
+  },
 };
 
-function drawPlaceholderScene() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+// --------- DIBUJO DE ESCENA --------- //
 
-  // Pista
-  ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
-  ctx.fillRect(40, 0, canvas.width - 80, canvas.height);
+function drawMountain(centerX, baseY, width, height) {
+  // montaña
+  ctx.fillStyle = "#111827";
+  ctx.beginPath();
+  ctx.moveTo(centerX, baseY - height);
+  ctx.lineTo(centerX - width / 2, baseY);
+  ctx.lineTo(centerX + width / 2, baseY);
+  ctx.closePath();
+  ctx.fill();
 
-  // Líneas de nieve
-  ctx.strokeStyle = "#d6e7f5";
-  ctx.lineWidth = 3;
-  for (let y = 30; y < canvas.height; y += 60) {
-    ctx.beginPath();
-    ctx.moveTo(40, y);
-    ctx.lineTo(canvas.width - 40, y + 20);
-    ctx.stroke();
+  // nieve en la cima
+  ctx.fillStyle = "#f9fafb";
+  ctx.beginPath();
+  ctx.moveTo(centerX, baseY - height);
+  ctx.lineTo(centerX - width * 0.18, baseY - height * 0.65);
+  ctx.lineTo(centerX, baseY - height * 0.55);
+  ctx.lineTo(centerX + width * 0.16, baseY - height * 0.7);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawBackground() {
+  const { width, height } = canvas;
+
+  // cielo
+  const sky = ctx.createLinearGradient(0, 0, 0, height);
+  sky.addColorStop(0, "#020617");
+  sky.addColorStop(0.5, "#0f172a");
+  sky.addColorStop(1, "#1f2937");
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, width, height);
+
+  // estrellas (semi fijas, no importa mucho para prototipo)
+  ctx.fillStyle = "rgba(248, 250, 252, 0.7)";
+  for (let i = 0; i < 40; i++) {
+    const x = Math.random() * width;
+    const y = Math.random() * (height * 0.4);
+    ctx.fillRect(x, y, 2, 2);
   }
 
-  // Patrulla (placeholder simple)
-  ctx.fillStyle = "#e63946";
-  ctx.fillRect(gameState.patrol.x, gameState.patrol.y, gameState.patrol.width, gameState.patrol.height);
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(gameState.patrol.x + 8, gameState.patrol.y + 12, 14, 6);
+  // montañas
+  drawMountain(width * 0.2, height * 0.85, width * 0.5, height * 0.25);
+  drawMountain(width * 0.7, height * 0.9, width * 0.55, height * 0.3);
 
-  // Accidentado (placeholder)
+  // nieve en primer plano (pista)
+  ctx.fillStyle = "#e5e7eb";
   ctx.beginPath();
-  ctx.arc(gameState.target.x, gameState.target.y, gameState.target.size, 0, Math.PI * 2);
-  ctx.fillStyle = "#1d3557";
+  ctx.moveTo(0, height * 0.55);
+  ctx.quadraticCurveTo(width * 0.3, height * 0.5, width * 0.6, height * 0.6);
+  ctx.quadraticCurveTo(width * 0.85, height * 0.68, width, height * 0.63);
+  ctx.lineTo(width, height);
+  ctx.lineTo(0, height);
+  ctx.closePath();
   ctx.fill();
-  ctx.fillStyle = "#f1faee";
-  ctx.font = "14px sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText("SOS", gameState.target.x, gameState.target.y + 5);
-
-  // Texto de depuración
-  ctx.fillStyle = "#0b2545";
-  ctx.font = "16px sans-serif";
-  ctx.fillText("Placeholder gráfico listo", canvas.width / 2, 32);
 }
 
-function startGame() {
-  if (gameState.running) return;
-  gameState.running = true;
-  statusText.textContent = "Juego iniciado. Placeholder dibujado en el canvas.";
-  drawPlaceholderScene();
+function drawPatrol(x, y) {
+  // cuerpo
+  ctx.fillStyle = "#ef4444";
+  ctx.fillRect(x - 12, y - 20, 24, 24);
+
+  // cruz
+  ctx.fillStyle = "#f9fafb";
+  ctx.fillRect(x - 3, y - 18, 6, 18);
+  ctx.fillRect(x - 9, y - 12, 18, 6);
+
+  // casco
+  ctx.beginPath();
+  ctx.arc(x, y - 24, 10, Math.PI, 0);
+  ctx.fillStyle = "#0f172a";
+  ctx.fill();
+
+  // esquís
+  ctx.strokeStyle = "#0f172a";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(x - 18, y + 8);
+  ctx.lineTo(x + 22, y + 18);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(x - 22, y + 14);
+  ctx.lineTo(x + 18, y + 24);
+  ctx.stroke();
 }
 
-startButton.addEventListener("click", startGame);
+function drawFlag(x, y, color = "#38bdf8") {
+  // poste
+  ctx.strokeStyle = "#0f172a";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x, y + 40);
+  ctx.stroke();
 
-// Dibuja el placeholder inicial para mostrar el canvas
-statusText.textContent = "Canvas inicializado. Haz clic en \"Iniciar juego\".";
-drawPlaceholderScene();
+  // bandera
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + 20, y + 6);
+  ctx.lineTo(x, y + 12);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawScene() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawBackground();
+
+  // patrulla (posición tomada del estado)
+  drawPatrol(gameState.patrolX, gameState.patrolY);
+
+  // banderas estáticas por ahora
+  drawFlag(canvas.width * 0.55, canvas.height * 0.55, "#22c55e");
+  drawFlag(canvas.width * 0.7, canvas.height * 0.6, "#38bdf8");
+  drawFlag(canvas.width * 0.85, canvas.height * 0.65, "#f97316");
+
+  // mensaje solo cuando el juego no está corriendo
+  if (!gameState.running) {
+    ctx.fillStyle = "rgba(15, 23, 42, 0.7)";
+    ctx.fillRect(
+      canvas.width * 0.1,
+      canvas.height * 0.12,
+      canvas.width * 0.8,
+      40
+    );
+
+    ctx.fillStyle = "#e5e7eb";
+    ctx.font = "16px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText(
+      "Listo para el rescate. Presiona “Iniciar juego”.",
+      canvas.width * 0.5,
+      canvas.height * 0.38
+    );
+  }
+}
+
+// --------- LOOP DE JUEGO --------- //
+
+function update() {
+  if (!gameState.running) return;
+
+  // mover patrulla según teclas presionadas
+  if (gameState.keys.left) {
+    gameState.patrolX -= gameState.patrolSpeed;
+  }
+  if (gameState.keys.right) {
+    gameState.patrolX += gameState.patrolSpeed;
+  }
+
+  // limitar dentro del canvas
+  const margin = 20;
+  if (gameState.patrolX < margin) gameState.patrolX = margin;
+  if (gameState.patrolX > canvas.width - margin)
+    gameState.patrolX = canvas.width - margin;
+}
+
+function gameLoop() {
+  update();
+  drawScene();
+  requestAnimationFrame(gameLoop);
+}
+
+// --------- INPUT (TECLADO) --------- //
+
+window.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowLeft" || e.key === "a") {
+    gameState.keys.left = true;
+  }
+  if (e.key === "ArrowRight" || e.key === "d") {
+    gameState.keys.right = true;
+  }
+});
+
+window.addEventListener("keyup", (e) => {
+  if (e.key === "ArrowLeft" || e.key === "a") {
+    gameState.keys.left = false;
+  }
+  if (e.key === "ArrowRight" || e.key === "d") {
+    gameState.keys.right = false;
+  }
+});
+
+// --------- INICIO --------- //
+
+startButton.addEventListener("click", () => {
+  if (!gameState.running) {
+    gameState.running = true;
+    statusText.textContent = "¡Rescate en curso! Usa ← → para moverte.";
+  }
+});
+
+// dibujar escena inicial y arrancar loop
+drawScene();
+gameLoop();
