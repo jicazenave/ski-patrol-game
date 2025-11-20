@@ -160,9 +160,9 @@ function drawPatrol(x, y) {
   ctx.save();
   let skiAngle = 0;
   if (gameState.keys.left) {
-    skiAngle = -0.35;
+    skiAngle = 0.45;
   } else if (gameState.keys.right) {
-    skiAngle = 0.35;
+    skiAngle = -0.45;
   }
 
   ctx.translate(x, y + 10);
