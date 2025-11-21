@@ -474,16 +474,16 @@ function update() {
       : 0;
 
   const targetLegAngle = turningDirection * 6;
-  const targetBodyAngle = -(targetLegAngle / 2) * (Math.PI / 180);
+  const targetBodyAngle = -(targetLegAngle) * (Math.PI / 180);
   const targetHeadAngle = 0;
   const targetSkiSeparation = isDescending ? 7 : 10;
   const targetPoleAngle = isDescending ? 0 : 0;
   const targetCrouchOffset = isDescending ? 10 : 0;
   const targetHeadDrop = isDescending ? 6 : 0;
   const targetBodyOffsetX = gameState.keys.right
-    ? 6
+    ? 10
     : gameState.keys.left
-      ? -6
+      ? -10
       : 0;
 
   gameState.visual.bodyAngle = lerp(
