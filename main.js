@@ -35,6 +35,8 @@ const gameState = {
     skiSeparation: 10,
     headAngle: 0,
     poleAngle: 0,
+    crouchOffset: 0,
+    headDrop: 0,
   },
   scrollOffset: 0,
   scrollSpeed: 3,
@@ -173,9 +175,8 @@ function drawPatrol(x, y, scale) {
   const poleAngle = gameState.visual?.poleAngle ?? 0;
   const bodyAngle = gameState.visual?.bodyAngle ?? 0;
   const headAngle = gameState.visual?.headAngle ?? 0;
-  const crouchRatio = clamp(Math.abs(bodyAngle) / 0.35, 0, 1);
-  const crouchOffset = lerp(0, 10, crouchRatio);
-  const headDrop = lerp(0, 6, crouchRatio);
+  const crouchOffset = gameState.visual?.crouchOffset ?? 0;
+  const headDrop = gameState.visual?.headDrop ?? 0;
 
   ctx.save();
   ctx.translate(x, y);
@@ -415,10 +416,12 @@ function update() {
   }
 
   const isDescending = gameState.keys.down;
-  const targetBodyAngle = isDescending ? 0.35 : 0;
-  const targetHeadAngle = isDescending ? 0.5 : 0;
+  const targetBodyAngle = 0;
+  const targetHeadAngle = 0;
   const targetSkiSeparation = isDescending ? 7 : 10;
   const targetPoleAngle = isDescending ? -0.45 : 0;
+  const targetCrouchOffset = isDescending ? 10 : 0;
+  const targetHeadDrop = isDescending ? 6 : 0;
 
   gameState.visual.bodyAngle = lerp(
     gameState.visual.bodyAngle,
@@ -438,6 +441,16 @@ function update() {
   gameState.visual.poleAngle = lerp(
     gameState.visual.poleAngle,
     targetPoleAngle,
+    0.2
+  );
+  gameState.visual.crouchOffset = lerp(
+    gameState.visual.crouchOffset,
+    targetCrouchOffset,
+    0.2
+  );
+  gameState.visual.headDrop = lerp(
+    gameState.visual.headDrop,
+    targetHeadDrop,
     0.2
   );
 
