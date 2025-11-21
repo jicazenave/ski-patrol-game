@@ -177,6 +177,10 @@ function drawPatrol(x, y, scale) {
   const headAngle = gameState.visual?.headAngle ?? 0;
   const crouchOffset = gameState.visual?.crouchOffset ?? 0;
   const headDrop = gameState.visual?.headDrop ?? 0;
+  const torsoTopY = baseY - bodyHeight + crouchOffset + 4;
+  const torsoBottomY = baseY + crouchOffset;
+  const shoulderHalf = shoulderWidth / 2;
+  const waistHalf = waistWidth / 2;
 
   ctx.save();
   ctx.translate(x, y);
@@ -243,30 +247,6 @@ function drawPatrol(x, y, scale) {
 
   ctx.restore();
 
-  // BASTONES (opcionales, hacia atrás)
-  ctx.save();
-  ctx.rotate(bodyAngle);
-  ctx.save();
-  ctx.translate(baseX, baseY);
-  ctx.rotate(poleAngle);
-  ctx.strokeStyle = "rgba(15, 23, 42, 0.7)";
-  ctx.lineWidth = 2;
-
-  // bastón izquierdo
-  ctx.beginPath();
-  ctx.moveTo(-9, -8 + crouchOffset);
-  ctx.lineTo(-12, 20 + crouchOffset);
-  ctx.stroke();
-
-  // bastón derecho
-  ctx.beginPath();
-  ctx.moveTo(9, -6 + crouchOffset);
-  ctx.lineTo(12, 22 + crouchOffset);
-  ctx.stroke();
-
-  ctx.restore();
-  ctx.restore();
-
   // MOCHILA
   ctx.save();
   ctx.rotate(bodyAngle);
@@ -296,11 +276,6 @@ function drawPatrol(x, y, scale) {
   ctx.rotate(bodyAngle);
   ctx.fillStyle = "#dc2626";
 
-  const torsoTopY = baseY - bodyHeight + crouchOffset + 4;
-  const torsoBottomY = baseY + crouchOffset;
-  const shoulderHalf = shoulderWidth / 2;
-  const waistHalf = waistWidth / 2;
-
   ctx.beginPath();
   ctx.moveTo(baseX - shoulderHalf, torsoTopY);
   ctx.lineTo(baseX + shoulderHalf, torsoTopY);
@@ -318,6 +293,66 @@ function drawPatrol(x, y, scale) {
 
   ctx.fillRect(cx - crossThick / 2, cy - crossWidth / 2, crossThick, crossWidth);
   ctx.fillRect(cx - crossWidth / 2, cy - crossThick / 2, crossWidth, crossThick);
+
+  ctx.restore();
+
+  // BRAZOS
+  const shoulderY = torsoTopY + 2;
+  const armLength = 18;
+  const armWidth = 6;
+  const armTilt = 0.14;
+  let leftHand = { x: -9, y: -8 + crouchOffset };
+  let rightHand = { x: 9, y: -6 + crouchOffset };
+
+  ctx.save();
+  ctx.rotate(bodyAngle);
+  ctx.fillStyle = "#dc2626";
+
+  function drawArm(shoulderX, angle) {
+    ctx.save();
+    ctx.translate(shoulderX, shoulderY);
+    ctx.rotate(angle);
+    if (typeof ctx.roundRect === "function") {
+      ctx.beginPath();
+      ctx.roundRect(-armWidth / 2, 0, armWidth, armLength, 3);
+      ctx.fill();
+    } else {
+      ctx.fillRect(-armWidth / 2, 0, armWidth, armLength);
+    }
+    ctx.restore();
+
+    return {
+      x: shoulderX - Math.sin(angle) * armLength,
+      y: shoulderY + Math.cos(angle) * armLength,
+    };
+  }
+
+  leftHand = drawArm(-shoulderHalf + 1, -armTilt);
+  rightHand = drawArm(shoulderHalf - 1, armTilt);
+
+  ctx.restore();
+
+  // BASTONES (opcionales, hacia atrás)
+  ctx.save();
+  ctx.rotate(bodyAngle);
+  ctx.strokeStyle = "rgba(15, 23, 42, 0.7)";
+  ctx.lineWidth = 2;
+
+  const poleLength = 28;
+
+  function drawPole(hand, extraTilt) {
+    ctx.save();
+    ctx.translate(hand.x, hand.y);
+    ctx.rotate(poleAngle + extraTilt);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-3, poleLength);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  drawPole(leftHand, -0.06);
+  drawPole(rightHand, 0.06);
 
   ctx.restore();
 
