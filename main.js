@@ -37,6 +37,8 @@ const gameState = {
     poleAngle: 0,
     crouchOffset: 0,
     headDrop: 0,
+    bodyOffsetX: 0,
+    legAngle: 0,
   },
   scrollOffset: 0,
   scrollSpeed: 3,
@@ -177,6 +179,8 @@ function drawPatrol(x, y, scale) {
   const headAngle = gameState.visual?.headAngle ?? 0;
   const crouchOffset = gameState.visual?.crouchOffset ?? 0;
   const headDrop = gameState.visual?.headDrop ?? 0;
+  const bodyOffsetX = gameState.visual?.bodyOffsetX ?? 0;
+  const legAngle = gameState.visual?.legAngle ?? 0;
   const torsoTopY = baseY - bodyHeight + crouchOffset + 4;
   const torsoBottomY = baseY + crouchOffset;
   const shoulderHalf = shoulderWidth / 2;
@@ -246,6 +250,9 @@ function drawPatrol(x, y, scale) {
   }
 
   ctx.restore();
+
+  ctx.save();
+  ctx.translate(bodyOffsetX, 0);
 
   // MOCHILA
   ctx.save();
@@ -360,15 +367,21 @@ function drawPatrol(x, y, scale) {
   ctx.save();
   ctx.rotate(bodyAngle);
   ctx.fillStyle = "#111827";
-  if (typeof ctx.roundRect === "function") {
+  const legTopY = baseY - 2 + crouchOffset;
+  const legBottomY = legTopY + 12;
+
+  function drawLeg(hipX) {
     ctx.beginPath();
-    ctx.roundRect(baseX - 10, baseY - 2 + crouchOffset, 8, 12, 3); // pierna izq
-    ctx.roundRect(baseX + 2, baseY - 2 + crouchOffset, 8, 12, 3); // pierna der
+    ctx.moveTo(hipX - 4, legTopY);
+    ctx.lineTo(hipX + 4, legTopY);
+    ctx.lineTo(hipX + 4 + legAngle, legBottomY);
+    ctx.lineTo(hipX - 4 + legAngle, legBottomY);
+    ctx.closePath();
     ctx.fill();
-  } else {
-    ctx.fillRect(baseX - 10, baseY - 2 + crouchOffset, 8, 12);
-    ctx.fillRect(baseX + 2, baseY - 2 + crouchOffset, 8, 12);
   }
+
+  drawLeg(baseX - 10);
+  drawLeg(baseX + 6);
   ctx.restore();
 
   // CASCO
@@ -403,6 +416,7 @@ function drawPatrol(x, y, scale) {
   ctx.fillStyle = "rgba(248, 250, 252, 0.6)";
   ctx.fillRect(headCenterX - 6, headCenterY + 3, 5, 2);
 
+  ctx.restore();
   ctx.restore();
   ctx.restore();
 }
@@ -457,6 +471,16 @@ function update() {
   const targetPoleAngle = isDescending ? 0 : 0;
   const targetCrouchOffset = isDescending ? 10 : 0;
   const targetHeadDrop = isDescending ? 6 : 0;
+  const targetBodyOffsetX = gameState.keys.right
+    ? 6
+    : gameState.keys.left
+      ? -6
+      : 0;
+  const targetLegAngle = gameState.keys.right
+    ? 6
+    : gameState.keys.left
+      ? -6
+      : 0;
 
   gameState.visual.bodyAngle = lerp(
     gameState.visual.bodyAngle,
@@ -486,6 +510,16 @@ function update() {
   gameState.visual.headDrop = lerp(
     gameState.visual.headDrop,
     targetHeadDrop,
+    0.2
+  );
+  gameState.visual.bodyOffsetX = lerp(
+    gameState.visual.bodyOffsetX,
+    targetBodyOffsetX,
+    0.2
+  );
+  gameState.visual.legAngle = lerp(
+    gameState.visual.legAngle,
+    targetLegAngle,
     0.2
   );
 
