@@ -419,7 +419,7 @@ function update() {
   const targetBodyAngle = 0;
   const targetHeadAngle = 0;
   const targetSkiSeparation = isDescending ? 7 : 10;
-  const targetPoleAngle = isDescending ? -0.45 : 0;
+  const targetPoleAngle = isDescending ? 0 : 0;
   const targetCrouchOffset = isDescending ? 10 : 0;
   const targetHeadDrop = isDescending ? 6 : 0;
 
