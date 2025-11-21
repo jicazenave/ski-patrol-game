@@ -299,7 +299,7 @@ function drawPatrol(x, y, scale) {
   // BRAZOS
   const shoulderY = torsoTopY + 2;
   const armLength = 18;
-  const armWidth = 8;
+  const armWidth = 12;
   const armTilt = 0.14;
   let leftHand = { x: -9, y: -8 + crouchOffset };
   let rightHand = { x: 9, y: -6 + crouchOffset };
