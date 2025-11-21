@@ -251,6 +251,29 @@ function drawPatrol(x, y, scale) {
 
   ctx.restore();
 
+  // PIERNAS / PANTALÓN (base en esquís, caderas se desplazan)
+  ctx.save();
+  ctx.rotate(bodyAngle);
+  ctx.fillStyle = "#111827";
+  const legLength = Math.round(12 * 1.6);
+  const legBottomY = baseY + 10 + crouchOffset;
+  const legTopY = legBottomY - legLength;
+
+  function drawLeg(footX) {
+    const topX = footX + bodyOffsetX + legAngle;
+    ctx.beginPath();
+    ctx.moveTo(topX - 4, legTopY);
+    ctx.lineTo(topX + 4, legTopY);
+    ctx.lineTo(footX + 4, legBottomY);
+    ctx.lineTo(footX - 4, legBottomY);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  drawLeg(baseX - 10);
+  drawLeg(baseX + 6);
+  ctx.restore();
+
   ctx.save();
   ctx.translate(bodyOffsetX, 0);
 
@@ -361,27 +384,6 @@ function drawPatrol(x, y, scale) {
   drawPole(leftHand, -0.06);
   drawPole(rightHand, 0.06);
 
-  ctx.restore();
-
-  // PIERNAS / PANTALÓN
-  ctx.save();
-  ctx.rotate(bodyAngle);
-  ctx.fillStyle = "#111827";
-  const legTopY = baseY - 2 + crouchOffset;
-  const legBottomY = legTopY + 12;
-
-  function drawLeg(hipX) {
-    ctx.beginPath();
-    ctx.moveTo(hipX - 4, legTopY);
-    ctx.lineTo(hipX + 4, legTopY);
-    ctx.lineTo(hipX + 4 + legAngle, legBottomY);
-    ctx.lineTo(hipX - 4 + legAngle, legBottomY);
-    ctx.closePath();
-    ctx.fill();
-  }
-
-  drawLeg(baseX - 10);
-  drawLeg(baseX + 6);
   ctx.restore();
 
   // CASCO
