@@ -198,8 +198,8 @@ function drawPatrol(x, y, scale) {
   ctx.lineWidth = 6;
   ctx.lineCap = "round";
 
-  const leftSkiAngle = visual.skiAngle + visual.skiSpread;
-  const rightSkiAngle = visual.skiAngle - visual.skiSpread;
+  const leftSkiAngle = visual.skiAngle - visual.skiSpread;
+  const rightSkiAngle = visual.skiAngle + visual.skiSpread;
 
   const drawSki = (offsetX, angle) => {
     ctx.save();
@@ -252,7 +252,7 @@ function drawPatrol(x, y, scale) {
   // MOCHILA
   ctx.save();
   ctx.fillStyle = "#1e293b";
-  const packOffset = gameState.keys.down ? 2 : 0;
+  const packOffset = gameState.keys.down ? 3 : 0;
   if (typeof ctx.roundRect === "function") {
     ctx.beginPath();
     ctx.roundRect(
@@ -276,7 +276,7 @@ function drawPatrol(x, y, scale) {
   // CUERPO (chaqueta roja)
   ctx.save();
   ctx.fillStyle = "#dc2626";
-  const torsoLean = gameState.keys.down ? 3 : 0;
+  const torsoLean = gameState.keys.down ? 5 : 0;
   const torsoLift = gameState.keys.up ? -2 : 0;
   const torsoY = baseY - bodyHeight + torsoLean + torsoLift;
   if (typeof ctx.roundRect === "function") {
@@ -317,7 +317,7 @@ function drawPatrol(x, y, scale) {
   // CASCO
   ctx.save();
   const headRadius = 10;
-  const headLean = gameState.keys.down ? 4 : gameState.keys.up ? -2 : 0;
+  const headLean = gameState.keys.down ? 6 : gameState.keys.up ? -2 : 0;
   const headCenterY = baseY - bodyHeight - 8 + headLean + torsoLift;
 
   ctx.beginPath();
@@ -434,7 +434,7 @@ function update() {
 
   let targetBodyAngle = 0;
   if (gameState.keys.down) {
-    targetBodyAngle = 0.15;
+    targetBodyAngle = 0;
   } else if (gameState.keys.up) {
     targetBodyAngle = -0.05;
   } else if (gameState.keys.left) {
