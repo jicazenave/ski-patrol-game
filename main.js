@@ -33,6 +33,7 @@ const gameState = {
   visual: {
     bodyAngle: 0,
     skiSeparation: 10,
+    headAngle: 0,
     poleAngle: 0,
   },
   scrollOffset: 0,
@@ -162,22 +163,19 @@ function clamp(value, min, max) {
 
 function drawPatrol(x, y, scale) {
   // Tamaños base
-  const bodyWidth = 22;
-  const bodyHeight = 28;
   const baseX = 0;
   const baseY = 0;
-  const skiSeparation = gameState.visual?.skiSeparation ?? 8;
+  const bodyHeight = 30;
+  const shoulderWidth = 26;
+  const waistWidth = 16;
+  const bodyWidth = waistWidth;
+  const skiSeparation = gameState.visual?.skiSeparation ?? 10;
   const poleAngle = gameState.visual?.poleAngle ?? 0;
-  const crouchOffset = lerp(
-    0,
-    9,
-    Math.min(gameState.visual?.bodyAngle ?? 0, 0.3) / 0.3
-  );
-  const headForwardOffset = lerp(
-    0,
-    6,
-    Math.min(gameState.visual?.bodyAngle ?? 0, 0.3) / 0.3
-  );
+  const bodyAngle = gameState.visual?.bodyAngle ?? 0;
+  const headAngle = gameState.visual?.headAngle ?? 0;
+  const crouchRatio = clamp(Math.abs(bodyAngle) / 0.35, 0, 1);
+  const crouchOffset = lerp(0, 10, crouchRatio);
+  const headDrop = lerp(0, 6, crouchRatio);
 
   ctx.save();
   ctx.translate(x, y);
@@ -246,7 +244,7 @@ function drawPatrol(x, y, scale) {
 
   // BASTONES (opcionales, hacia atrás)
   ctx.save();
-  ctx.rotate(gameState.visual?.bodyAngle ?? 0);
+  ctx.rotate(bodyAngle);
   ctx.save();
   ctx.translate(baseX, baseY);
   ctx.rotate(poleAngle);
@@ -255,14 +253,14 @@ function drawPatrol(x, y, scale) {
 
   // bastón izquierdo
   ctx.beginPath();
-  ctx.moveTo(-9, 2);
-  ctx.lineTo(-9, -26);
+  ctx.moveTo(-9, -8 + crouchOffset);
+  ctx.lineTo(-12, 20 + crouchOffset);
   ctx.stroke();
 
   // bastón derecho
   ctx.beginPath();
-  ctx.moveTo(9, 4);
-  ctx.lineTo(9, -24);
+  ctx.moveTo(9, -6 + crouchOffset);
+  ctx.lineTo(12, 22 + crouchOffset);
   ctx.stroke();
 
   ctx.restore();
@@ -270,7 +268,7 @@ function drawPatrol(x, y, scale) {
 
   // MOCHILA
   ctx.save();
-  ctx.rotate(gameState.visual?.bodyAngle ?? 0);
+  ctx.rotate(bodyAngle);
   ctx.fillStyle = "#1e293b";
   if (typeof ctx.roundRect === "function") {
     ctx.beginPath();
@@ -294,72 +292,55 @@ function drawPatrol(x, y, scale) {
 
   // CUERPO (chaqueta roja)
   ctx.save();
-  ctx.rotate(gameState.visual?.bodyAngle ?? 0);
+  ctx.rotate(bodyAngle);
   ctx.fillStyle = "#dc2626";
-  if (typeof ctx.roundRect === "function") {
-    ctx.beginPath();
-    ctx.roundRect(
-      baseX - bodyWidth / 2,
-      baseY - bodyHeight + crouchOffset,
-      bodyWidth,
-      bodyHeight,
-      6
-    );
-    ctx.fill();
-  } else {
-    ctx.fillRect(
-      baseX - bodyWidth / 2,
-      baseY - bodyHeight + crouchOffset,
-      bodyWidth,
-      bodyHeight
-    );
-  }
+
+  const torsoTopY = baseY - bodyHeight + crouchOffset + 4;
+  const torsoBottomY = baseY + crouchOffset;
+  const shoulderHalf = shoulderWidth / 2;
+  const waistHalf = waistWidth / 2;
+
+  ctx.beginPath();
+  ctx.moveTo(baseX - shoulderHalf, torsoTopY);
+  ctx.lineTo(baseX + shoulderHalf, torsoTopY);
+  ctx.lineTo(baseX + waistHalf, torsoBottomY);
+  ctx.lineTo(baseX - waistHalf, torsoBottomY);
+  ctx.closePath();
+  ctx.fill();
 
   // Cruz de patrulla
   ctx.fillStyle = "#f9fafb";
   const crossWidth = 12;
   const crossThick = 4;
   const cx = baseX;
-  const cy = baseY - bodyHeight / 2 + crouchOffset;
+  const cy = torsoTopY + (torsoBottomY - torsoTopY) / 2;
 
-  // vertical
-  ctx.fillRect(
-    cx - crossThick / 2,
-    cy - crossWidth / 2,
-    crossThick,
-    crossWidth
-  );
-  // horizontal
-  ctx.fillRect(
-    cx - crossWidth / 2,
-    cy - crossThick / 2,
-    crossWidth,
-    crossThick
-  );
+  ctx.fillRect(cx - crossThick / 2, cy - crossWidth / 2, crossThick, crossWidth);
+  ctx.fillRect(cx - crossWidth / 2, cy - crossThick / 2, crossWidth, crossThick);
 
   ctx.restore();
 
   // PIERNAS / PANTALÓN
   ctx.save();
-  ctx.rotate(gameState.visual?.bodyAngle ?? 0);
+  ctx.rotate(bodyAngle);
   ctx.fillStyle = "#111827";
   if (typeof ctx.roundRect === "function") {
     ctx.beginPath();
-    ctx.roundRect(baseX - 10, baseY - 4 + crouchOffset, 8, 12, 3); // pierna izq
-    ctx.roundRect(baseX + 2, baseY - 4 + crouchOffset, 8, 12, 3); // pierna der
+    ctx.roundRect(baseX - 10, baseY - 2 + crouchOffset, 8, 12, 3); // pierna izq
+    ctx.roundRect(baseX + 2, baseY - 2 + crouchOffset, 8, 12, 3); // pierna der
     ctx.fill();
   } else {
-    ctx.fillRect(baseX - 10, baseY - 4 + crouchOffset, 8, 12);
-    ctx.fillRect(baseX + 2, baseY - 4 + crouchOffset, 8, 12);
+    ctx.fillRect(baseX - 10, baseY - 2 + crouchOffset, 8, 12);
+    ctx.fillRect(baseX + 2, baseY - 2 + crouchOffset, 8, 12);
   }
   ctx.restore();
 
   // CASCO
   ctx.save();
-  ctx.rotate(gameState.visual?.bodyAngle ?? 0);
+  ctx.rotate(bodyAngle + headAngle);
   const headRadius = 10;
-  const headCenterY = baseY - bodyHeight - 8 + crouchOffset;
-  const headCenterX = baseX + headForwardOffset;
+  const headCenterY = baseY - bodyHeight - 6 + crouchOffset + headDrop;
+  const headCenterX = baseX;
 
   // casco base
   ctx.beginPath();
@@ -434,14 +415,20 @@ function update() {
   }
 
   const isDescending = gameState.keys.down;
-  const targetBodyAngle = isDescending ? 0.3 : 0;
-  const targetSkiSeparation = isDescending ? 5 : 10;
-  const targetPoleAngle = isDescending ? -0.4 : 0;
+  const targetBodyAngle = isDescending ? 0.35 : 0;
+  const targetHeadAngle = isDescending ? 0.5 : 0;
+  const targetSkiSeparation = isDescending ? 7 : 10;
+  const targetPoleAngle = isDescending ? -0.45 : 0;
 
   gameState.visual.bodyAngle = lerp(
     gameState.visual.bodyAngle,
     targetBodyAngle,
-    0.15
+    0.2
+  );
+  gameState.visual.headAngle = lerp(
+    gameState.visual.headAngle,
+    targetHeadAngle,
+    0.2
   );
   gameState.visual.skiSeparation = lerp(
     gameState.visual.skiSeparation,
