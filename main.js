@@ -32,7 +32,7 @@ const gameState = {
   },
   visual: {
     bodyAngle: 0,
-    skiSeparation: 8,
+    skiSeparation: 10,
     poleAngle: 0,
   },
   scrollOffset: 0,
@@ -170,18 +170,17 @@ function drawPatrol(x, y, scale) {
   const poleAngle = gameState.visual?.poleAngle ?? 0;
   const crouchOffset = lerp(
     0,
-    6,
-    Math.min(gameState.visual?.bodyAngle ?? 0, 0.25) / 0.25
+    9,
+    Math.min(gameState.visual?.bodyAngle ?? 0, 0.3) / 0.3
   );
   const headForwardOffset = lerp(
     0,
-    4,
-    Math.min(gameState.visual?.bodyAngle ?? 0, 0.25) / 0.25
+    6,
+    Math.min(gameState.visual?.bodyAngle ?? 0, 0.3) / 0.3
   );
 
   ctx.save();
   ctx.translate(x, y);
-  ctx.rotate(gameState.visual?.bodyAngle ?? 0);
   ctx.scale(scale, scale);
 
   // SOMBRA (debajo de los esquís)
@@ -247,6 +246,8 @@ function drawPatrol(x, y, scale) {
 
   // BASTONES (opcionales, hacia atrás)
   ctx.save();
+  ctx.rotate(gameState.visual?.bodyAngle ?? 0);
+  ctx.save();
   ctx.translate(baseX, baseY);
   ctx.rotate(poleAngle);
   ctx.strokeStyle = "rgba(15, 23, 42, 0.7)";
@@ -265,9 +266,11 @@ function drawPatrol(x, y, scale) {
   ctx.stroke();
 
   ctx.restore();
+  ctx.restore();
 
   // MOCHILA
   ctx.save();
+  ctx.rotate(gameState.visual?.bodyAngle ?? 0);
   ctx.fillStyle = "#1e293b";
   if (typeof ctx.roundRect === "function") {
     ctx.beginPath();
@@ -291,6 +294,7 @@ function drawPatrol(x, y, scale) {
 
   // CUERPO (chaqueta roja)
   ctx.save();
+  ctx.rotate(gameState.visual?.bodyAngle ?? 0);
   ctx.fillStyle = "#dc2626";
   if (typeof ctx.roundRect === "function") {
     ctx.beginPath();
@@ -337,6 +341,7 @@ function drawPatrol(x, y, scale) {
 
   // PIERNAS / PANTALÓN
   ctx.save();
+  ctx.rotate(gameState.visual?.bodyAngle ?? 0);
   ctx.fillStyle = "#111827";
   if (typeof ctx.roundRect === "function") {
     ctx.beginPath();
@@ -351,6 +356,7 @@ function drawPatrol(x, y, scale) {
 
   // CASCO
   ctx.save();
+  ctx.rotate(gameState.visual?.bodyAngle ?? 0);
   const headRadius = 10;
   const headCenterY = baseY - bodyHeight - 8 + crouchOffset;
   const headCenterX = baseX + headForwardOffset;
@@ -428,8 +434,8 @@ function update() {
   }
 
   const isDescending = gameState.keys.down;
-  const targetBodyAngle = isDescending ? 0.25 : 0;
-  const targetSkiSeparation = isDescending ? 4 : 8;
+  const targetBodyAngle = isDescending ? 0.3 : 0;
+  const targetSkiSeparation = isDescending ? 5 : 10;
   const targetPoleAngle = isDescending ? -0.4 : 0;
 
   gameState.visual.bodyAngle = lerp(
