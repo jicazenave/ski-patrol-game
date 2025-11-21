@@ -34,6 +34,17 @@ const gameState = {
   scrollSpeed: 3,
   stars: [],
   snowLines: [],
+  visual: {
+    bodyAngle: 0,
+    bobOffset: 0,
+    jitterX: 0,
+    jitterY: 0,
+    speed: 0,
+    skiAngle: 0,
+    skiSpread: 0,
+    time: 0,
+  },
+  lastPatrolY: canvas.height * 0.82,
 };
 
 function initBackground() {
@@ -156,17 +167,20 @@ function clamp(value, min, max) {
 }
 
 function drawPatrol(x, y, scale) {
-  // Tamaños base
   const bodyWidth = 22;
   const bodyHeight = 28;
   const baseX = 0;
   const baseY = 0;
+  const visual = gameState.visual;
+
+  const basePosX = x + visual.jitterX;
+  const basePosY = y + visual.bobOffset + visual.jitterY;
 
   ctx.save();
-  ctx.translate(x, y);
+  ctx.translate(basePosX, basePosY);
   ctx.scale(scale, scale);
 
-  // SOMBRA (debajo de los esquís)
+  // Sombra sin rotación para mantenerla anclada al suelo
   ctx.save();
   ctx.fillStyle = "rgba(15, 23, 42, 0.35)";
   ctx.beginPath();
@@ -174,110 +188,103 @@ function drawPatrol(x, y, scale) {
   ctx.fill();
   ctx.restore();
 
+  // Rotación e inclinación del cuerpo
+  ctx.rotate(visual.bodyAngle);
+
   // ESQUÍS
   ctx.save();
-  if (gameState.keys.up) {
-    // Modo cuña: puntas casi juntas (abajo), colas abiertas
-    ctx.translate(baseX, baseY + 10);
-    ctx.strokeStyle = "#0f172a";
-    ctx.lineWidth = 6;
-    ctx.lineCap = "round";
+  ctx.translate(baseX, baseY + 10);
+  ctx.strokeStyle = "#0f172a";
+  ctx.lineWidth = 6;
+  ctx.lineCap = "round";
 
-    const tailWidth = 18;
-    const tipLength = 22;
-    const tipGap = 3; // pequeña separación entre puntas
+  const leftSkiAngle = visual.skiAngle + visual.skiSpread;
+  const rightSkiAngle = visual.skiAngle - visual.skiSpread;
 
-    // Esquí izquierdo
+  const drawSki = (offsetX, angle) => {
+    ctx.save();
+    ctx.translate(offsetX, 0);
+    ctx.rotate(angle);
     ctx.beginPath();
-    ctx.moveTo(-tailWidth, 0); // cola abierta
-    ctx.lineTo(-tipGap, tipLength); // punta casi al centro (abajo)
+    ctx.moveTo(0, -2);
+    ctx.lineTo(0, 26);
     ctx.stroke();
+    ctx.restore();
+  };
 
-    // Esquí derecho
-    ctx.beginPath();
-    ctx.moveTo(tailWidth, 0); // cola abierta
-    ctx.lineTo(tipGap, tipLength); // punta casi al centro (abajo)
-    ctx.stroke();
-  } else {
-    let skiAngle = 0;
-    if (gameState.keys.left) {
-      skiAngle = 0.45;
-    } else if (gameState.keys.right) {
-      skiAngle = -0.45;
-    }
-
-    ctx.translate(baseX, baseY + 10);
-    ctx.rotate(skiAngle);
-    ctx.strokeStyle = "#0f172a";
-    ctx.lineWidth = 6;
-    ctx.lineCap = "round";
-
-    // Esquí izquierdo
-    ctx.beginPath();
-    ctx.moveTo(-8, -2);
-    ctx.lineTo(-8, 26);
-    ctx.stroke();
-
-    // Esquí derecho (ligeramente separado)
-    ctx.beginPath();
-    ctx.moveTo(8, -2);
-    ctx.lineTo(8, 26);
-    ctx.stroke();
-  }
-
+  drawSki(-8 - Math.sin(visual.bodyAngle) * 2, leftSkiAngle);
+  drawSki(8 - Math.sin(visual.bodyAngle) * 2, rightSkiAngle);
   ctx.restore();
 
-  // BASTONES (opcionales, hacia atrás)
+  // BASTONES
   ctx.save();
-  ctx.strokeStyle = "rgba(15, 23, 42, 0.7)";
+  ctx.strokeStyle = "rgba(15, 23, 42, 0.75)";
   ctx.lineWidth = 2;
 
-  // bastón izquierdo
-  ctx.beginPath();
-  ctx.moveTo(baseX - 8, baseY + 2);
-  ctx.lineTo(baseX - 18, baseY - 20);
-  ctx.stroke();
+  let poleBaseAngle = -0.5; // hacia atrás por defecto
+  if (gameState.keys.down) poleBaseAngle = -1.1;
+  if (gameState.keys.up) poleBaseAngle = -0.1;
 
-  // bastón derecho
-  ctx.beginPath();
-  ctx.moveTo(baseX + 8, baseY + 4);
-  ctx.lineTo(baseX + 18, baseY - 18);
-  ctx.stroke();
+  const lateralPoleLean = gameState.keys.left
+    ? -0.35
+    : gameState.keys.right
+    ? 0.35
+    : 0;
 
+  const poleDistance = 14;
+  const poleHeight = 18;
+
+  const drawPole = (offsetX, extraAngle) => {
+    ctx.save();
+    ctx.translate(offsetX, baseY + 2);
+    ctx.rotate(poleBaseAngle + extraAngle);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(0, -poleHeight);
+    ctx.stroke();
+    ctx.restore();
+  };
+
+  drawPole(-poleDistance, lateralPoleLean - 0.1);
+  drawPole(poleDistance, lateralPoleLean + 0.1);
   ctx.restore();
 
   // MOCHILA
   ctx.save();
   ctx.fillStyle = "#1e293b";
+  const packOffset = gameState.keys.down ? 2 : 0;
   if (typeof ctx.roundRect === "function") {
     ctx.beginPath();
-    ctx.roundRect(baseX - bodyWidth / 2 - 4, baseY - bodyHeight - 2, 10, 18, 4);
+    ctx.roundRect(
+      baseX - bodyWidth / 2 - 4,
+      baseY - bodyHeight - 2 + packOffset,
+      10,
+      18,
+      4
+    );
     ctx.fill();
   } else {
-    ctx.fillRect(baseX - bodyWidth / 2 - 4, baseY - bodyHeight - 2, 10, 18);
+    ctx.fillRect(
+      baseX - bodyWidth / 2 - 4,
+      baseY - bodyHeight - 2 + packOffset,
+      10,
+      18
+    );
   }
   ctx.restore();
 
   // CUERPO (chaqueta roja)
   ctx.save();
   ctx.fillStyle = "#dc2626";
+  const torsoLean = gameState.keys.down ? 3 : 0;
+  const torsoLift = gameState.keys.up ? -2 : 0;
+  const torsoY = baseY - bodyHeight + torsoLean + torsoLift;
   if (typeof ctx.roundRect === "function") {
     ctx.beginPath();
-    ctx.roundRect(
-      baseX - bodyWidth / 2,
-      baseY - bodyHeight,
-      bodyWidth,
-      bodyHeight,
-      6
-    );
+    ctx.roundRect(baseX - bodyWidth / 2, torsoY, bodyWidth, bodyHeight, 6);
     ctx.fill();
   } else {
-    ctx.fillRect(
-      baseX - bodyWidth / 2,
-      baseY - bodyHeight,
-      bodyWidth,
-      bodyHeight
-    );
+    ctx.fillRect(baseX - bodyWidth / 2, torsoY, bodyWidth, bodyHeight);
   }
 
   // Cruz de patrulla
@@ -285,56 +292,43 @@ function drawPatrol(x, y, scale) {
   const crossWidth = 12;
   const crossThick = 4;
   const cx = baseX;
-  const cy = baseY - bodyHeight / 2;
+  const cy = torsoY + bodyHeight / 2;
 
-  // vertical
-  ctx.fillRect(
-    cx - crossThick / 2,
-    cy - crossWidth / 2,
-    crossThick,
-    crossWidth
-  );
-  // horizontal
-  ctx.fillRect(
-    cx - crossWidth / 2,
-    cy - crossThick / 2,
-    crossWidth,
-    crossThick
-  );
+  ctx.fillRect(cx - crossThick / 2, cy - crossWidth / 2, crossThick, crossWidth);
+  ctx.fillRect(cx - crossWidth / 2, cy - crossThick / 2, crossWidth, crossThick);
 
   ctx.restore();
 
   // PIERNAS / PANTALÓN
   ctx.save();
   ctx.fillStyle = "#111827";
+  const crouch = gameState.keys.down ? 4 : 0;
   if (typeof ctx.roundRect === "function") {
     ctx.beginPath();
-    ctx.roundRect(baseX - 10, baseY - 4, 8, 12, 3); // pierna izq
-    ctx.roundRect(baseX + 2, baseY - 4, 8, 12, 3); // pierna der
+    ctx.roundRect(baseX - 10, baseY - 4 + crouch, 8, 12, 3);
+    ctx.roundRect(baseX + 2, baseY - 4 + crouch, 8, 12, 3);
     ctx.fill();
   } else {
-    ctx.fillRect(baseX - 10, baseY - 4, 8, 12);
-    ctx.fillRect(baseX + 2, baseY - 4, 8, 12);
+    ctx.fillRect(baseX - 10, baseY - 4 + crouch, 8, 12);
+    ctx.fillRect(baseX + 2, baseY - 4 + crouch, 8, 12);
   }
   ctx.restore();
 
   // CASCO
   ctx.save();
   const headRadius = 10;
-  const headCenterY = baseY - bodyHeight - 8;
+  const headLean = gameState.keys.down ? 4 : gameState.keys.up ? -2 : 0;
+  const headCenterY = baseY - bodyHeight - 8 + headLean + torsoLift;
 
-  // casco base
   ctx.beginPath();
   ctx.arc(baseX, headCenterY, headRadius, Math.PI, 0);
   ctx.closePath();
   ctx.fillStyle = "#0f172a";
   ctx.fill();
 
-  // franja del casco
   ctx.fillStyle = "#dc2626";
   ctx.fillRect(baseX - headRadius, headCenterY - 1, headRadius * 2, 4);
 
-  // gafas / visera
   ctx.fillStyle = "#38bdf8";
   if (typeof ctx.roundRect === "function") {
     ctx.beginPath();
@@ -344,7 +338,6 @@ function drawPatrol(x, y, scale) {
     ctx.fillRect(baseX - 9, headCenterY + 2, 18, 6);
   }
 
-  // pequeño brillo
   ctx.fillStyle = "rgba(248, 250, 252, 0.6)";
   ctx.fillRect(baseX - 6, headCenterY + 3, 5, 2);
 
@@ -433,6 +426,64 @@ function update() {
       line.length = 18 + Math.random() * 20;
     }
   }
+
+  // Animaciones visuales (sin afectar la lógica de movimiento)
+  const visual = gameState.visual;
+  const now = performance.now() / 1000;
+  visual.time = now;
+
+  let targetBodyAngle = 0;
+  if (gameState.keys.down) {
+    targetBodyAngle = 0.15;
+  } else if (gameState.keys.up) {
+    targetBodyAngle = -0.05;
+  } else if (gameState.keys.left) {
+    targetBodyAngle = -0.25;
+  } else if (gameState.keys.right) {
+    targetBodyAngle = 0.25;
+  }
+
+  visual.bodyAngle = lerp(visual.bodyAngle, targetBodyAngle, 0.2);
+
+  const deltaY = gameState.patrolY - gameState.lastPatrolY;
+  const targetSpeed = Math.abs(gameState.scrollSpeed + deltaY);
+  visual.speed = lerp(visual.speed, targetSpeed, 0.12);
+
+  let targetSkiAngle = 0;
+  let targetSkiSpread = 0;
+  if (gameState.keys.up) {
+    targetSkiSpread = 0.55;
+    targetSkiAngle = -0.05;
+  } else if (gameState.keys.left) {
+    targetSkiAngle = 0.35;
+  } else if (gameState.keys.right) {
+    targetSkiAngle = -0.35;
+  } else if (gameState.keys.down) {
+    targetSkiAngle = 0;
+    targetSkiSpread = 0.05;
+  }
+
+  visual.skiAngle = lerp(visual.skiAngle, targetSkiAngle, 0.18);
+  visual.skiSpread = lerp(visual.skiSpread, targetSkiSpread, 0.18);
+
+  const bobFrequency = 6;
+  const bobAmplitude = 3.2;
+  const speedFactor = clamp(visual.speed / 8, 0, 1.4);
+  visual.bobOffset =
+    Math.sin(now * bobFrequency) * bobAmplitude * (0.3 + speedFactor * 0.7);
+
+  const jitterThreshold = 7;
+  const jitterAmount = 2.2;
+  const jitterFactor = Math.max(0, (visual.speed - jitterThreshold) / jitterThreshold);
+  if (jitterFactor > 0) {
+    visual.jitterX = (Math.random() - 0.5) * jitterAmount * jitterFactor;
+    visual.jitterY = (Math.random() - 0.5) * jitterAmount * jitterFactor;
+  } else {
+    visual.jitterX = lerp(visual.jitterX, 0, 0.2);
+    visual.jitterY = lerp(visual.jitterY, 0, 0.2);
+  }
+
+  gameState.lastPatrolY = gameState.patrolY;
 }
 
 function gameLoop() {
