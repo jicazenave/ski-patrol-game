@@ -467,21 +467,23 @@ function update() {
   }
 
   const isDescending = gameState.keys.down;
-  const targetBodyAngle = 0;
+  const turningDirection = gameState.keys.right
+    ? 1
+    : gameState.keys.left
+      ? -1
+      : 0;
+
+  const targetLegAngle = turningDirection * 6;
+  const targetBodyAngle = -(targetLegAngle) * (Math.PI / 180);
   const targetHeadAngle = 0;
   const targetSkiSeparation = isDescending ? 7 : 10;
   const targetPoleAngle = isDescending ? 0 : 0;
   const targetCrouchOffset = isDescending ? 10 : 0;
   const targetHeadDrop = isDescending ? 6 : 0;
   const targetBodyOffsetX = gameState.keys.right
-    ? 6
+    ? 14
     : gameState.keys.left
-      ? -6
-      : 0;
-  const targetLegAngle = gameState.keys.right
-    ? 6
-    : gameState.keys.left
-      ? -6
+      ? -14
       : 0;
 
   gameState.visual.bodyAngle = lerp(
