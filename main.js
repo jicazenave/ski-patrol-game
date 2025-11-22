@@ -37,6 +37,8 @@ const gameState = {
     poleAngle: 0,
     crouchOffset: 0,
     headDrop: 0,
+    bodyOffsetX: 0,
+    legAngle: 0,
   },
   scrollOffset: 0,
   scrollSpeed: 3,
@@ -177,6 +179,8 @@ function drawPatrol(x, y, scale) {
   const headAngle = gameState.visual?.headAngle ?? 0;
   const crouchOffset = gameState.visual?.crouchOffset ?? 0;
   const headDrop = gameState.visual?.headDrop ?? 0;
+  const bodyOffsetX = gameState.visual?.bodyOffsetX ?? 0;
+  const legAngle = gameState.visual?.legAngle ?? 0;
   const torsoTopY = baseY - bodyHeight + crouchOffset + 4;
   const torsoBottomY = baseY + crouchOffset;
   const shoulderHalf = shoulderWidth / 2;
@@ -246,6 +250,32 @@ function drawPatrol(x, y, scale) {
   }
 
   ctx.restore();
+
+  // PIERNAS / PANTALÓN (base en esquís, caderas se desplazan)
+  ctx.save();
+  ctx.rotate(bodyAngle);
+  ctx.fillStyle = "#111827";
+  const legLength = Math.round(12 * 1.6);
+  const legBottomY = baseY + 10 + crouchOffset;
+  const legTopY = legBottomY - legLength;
+
+  function drawLeg(footX) {
+    const topX = footX + bodyOffsetX + legAngle;
+    ctx.beginPath();
+    ctx.moveTo(topX - 4, legTopY);
+    ctx.lineTo(topX + 4, legTopY);
+    ctx.lineTo(footX + 4, legBottomY);
+    ctx.lineTo(footX - 4, legBottomY);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  drawLeg(baseX - 10);
+  drawLeg(baseX + 6);
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(bodyOffsetX, 0);
 
   // MOCHILA
   ctx.save();
@@ -356,21 +386,6 @@ function drawPatrol(x, y, scale) {
 
   ctx.restore();
 
-  // PIERNAS / PANTALÓN
-  ctx.save();
-  ctx.rotate(bodyAngle);
-  ctx.fillStyle = "#111827";
-  if (typeof ctx.roundRect === "function") {
-    ctx.beginPath();
-    ctx.roundRect(baseX - 10, baseY - 2 + crouchOffset, 8, 12, 3); // pierna izq
-    ctx.roundRect(baseX + 2, baseY - 2 + crouchOffset, 8, 12, 3); // pierna der
-    ctx.fill();
-  } else {
-    ctx.fillRect(baseX - 10, baseY - 2 + crouchOffset, 8, 12);
-    ctx.fillRect(baseX + 2, baseY - 2 + crouchOffset, 8, 12);
-  }
-  ctx.restore();
-
   // CASCO
   ctx.save();
   ctx.rotate(bodyAngle + headAngle);
@@ -403,6 +418,7 @@ function drawPatrol(x, y, scale) {
   ctx.fillStyle = "rgba(248, 250, 252, 0.6)";
   ctx.fillRect(headCenterX - 6, headCenterY + 3, 5, 2);
 
+  ctx.restore();
   ctx.restore();
   ctx.restore();
 }
@@ -451,12 +467,24 @@ function update() {
   }
 
   const isDescending = gameState.keys.down;
-  const targetBodyAngle = 0;
+  const turningDirection = gameState.keys.right
+    ? 1
+    : gameState.keys.left
+      ? -1
+      : 0;
+
+  const targetLegAngle = turningDirection * 6;
+  const targetBodyAngle = -(targetLegAngle) * (Math.PI / 180);
   const targetHeadAngle = 0;
   const targetSkiSeparation = isDescending ? 7 : 10;
   const targetPoleAngle = isDescending ? 0 : 0;
   const targetCrouchOffset = isDescending ? 10 : 0;
   const targetHeadDrop = isDescending ? 6 : 0;
+  const targetBodyOffsetX = gameState.keys.right
+    ? 14
+    : gameState.keys.left
+      ? -14
+      : 0;
 
   gameState.visual.bodyAngle = lerp(
     gameState.visual.bodyAngle,
@@ -486,6 +514,16 @@ function update() {
   gameState.visual.headDrop = lerp(
     gameState.visual.headDrop,
     targetHeadDrop,
+    0.2
+  );
+  gameState.visual.bodyOffsetX = lerp(
+    gameState.visual.bodyOffsetX,
+    targetBodyOffsetX,
+    0.2
+  );
+  gameState.visual.legAngle = lerp(
+    gameState.visual.legAngle,
+    targetLegAngle,
     0.2
   );
 
