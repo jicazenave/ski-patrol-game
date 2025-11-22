@@ -39,6 +39,9 @@ const gameState = {
     headDrop: 0,
     bodyOffsetX: 0,
     legAngle: 0,
+    armSpread: 0,
+    poleSpread: 0,
+    spreadDirection: 0,
   },
   scrollOffset: 0,
   scrollSpeed: 3,
@@ -181,6 +184,9 @@ function drawPatrol(x, y, scale) {
   const headDrop = gameState.visual?.headDrop ?? 0;
   const bodyOffsetX = gameState.visual?.bodyOffsetX ?? 0;
   const legAngle = gameState.visual?.legAngle ?? 0;
+  const armSpread = gameState.visual?.armSpread ?? 0;
+  const poleSpread = gameState.visual?.poleSpread ?? 0;
+  const spreadDirection = gameState.visual?.spreadDirection ?? 0;
   const torsoTopY = baseY - bodyHeight + crouchOffset + 4;
   const torsoBottomY = baseY + crouchOffset;
   const shoulderHalf = shoulderWidth / 2;
@@ -331,6 +337,9 @@ function drawPatrol(x, y, scale) {
   const armLength = 18;
   const armWidth = 12;
   const armTilt = 0.14;
+  const baseSpread = armSpread * 0.45;
+  const externalBias = 0.16 * armSpread;
+  const turnDir = spreadDirection;
   let leftHand = { x: -9, y: -8 + crouchOffset };
   let rightHand = { x: 9, y: -6 + crouchOffset };
 
@@ -338,7 +347,7 @@ function drawPatrol(x, y, scale) {
   ctx.rotate(bodyAngle);
   ctx.fillStyle = "#dc2626";
 
-  function drawArm(shoulderX, angle) {
+  function drawArm(shoulderX, angle, side) {
     ctx.save();
     ctx.translate(shoulderX, shoulderY);
     ctx.rotate(angle);
@@ -352,13 +361,19 @@ function drawPatrol(x, y, scale) {
     ctx.restore();
 
     return {
-      x: shoulderX - Math.sin(angle) * armLength,
-      y: shoulderY + Math.cos(angle) * armLength,
+      x:
+        shoulderX - Math.sin(angle) * armLength + side * armSpread * 3.5,
+      y: shoulderY + Math.cos(angle) * armLength - armSpread * 1.2,
     };
   }
 
-  leftHand = drawArm(-shoulderHalf + 1, -armTilt);
-  rightHand = drawArm(shoulderHalf - 1, armTilt);
+  const leftAngle =
+    -armTilt - baseSpread - (turnDir > 0 ? externalBias : armSpread * 0.06);
+  const rightAngle =
+    armTilt + baseSpread + (turnDir < 0 ? externalBias : armSpread * 0.06);
+
+  leftHand = drawArm(-shoulderHalf + 1, leftAngle, -1);
+  rightHand = drawArm(shoulderHalf - 1, rightAngle, 1);
 
   ctx.restore();
 
@@ -370,19 +385,23 @@ function drawPatrol(x, y, scale) {
 
   const poleLength = 28;
 
-  function drawPole(hand, extraTilt) {
+  function drawPole(hand, extraTilt, side) {
+    const lateralTilt = poleSpread * 0.5 * side;
+    const backwardTilt = -poleSpread * 0.2;
+    const tipLateral = -3 + side * poleSpread * 6;
+    const tipDrop = poleLength + poleSpread * 5;
     ctx.save();
     ctx.translate(hand.x, hand.y);
-    ctx.rotate(poleAngle + extraTilt);
+    ctx.rotate(poleAngle + extraTilt + lateralTilt + backwardTilt);
     ctx.beginPath();
     ctx.moveTo(0, 0);
-    ctx.lineTo(-3, poleLength);
+    ctx.lineTo(tipLateral, tipDrop);
     ctx.stroke();
     ctx.restore();
   }
 
-  drawPole(leftHand, -0.06);
-  drawPole(rightHand, 0.06);
+  drawPole(leftHand, -0.06, -1);
+  drawPole(rightHand, 0.06, 1);
 
   ctx.restore();
 
@@ -485,6 +504,9 @@ function update() {
     : gameState.keys.left
       ? -14
       : 0;
+  const targetArmSpread = turningDirection !== 0 ? 1 : 0;
+  const targetPoleSpread = turningDirection !== 0 ? 1.1 : 0;
+  const targetSpreadDirection = turningDirection;
 
   gameState.visual.bodyAngle = lerp(
     gameState.visual.bodyAngle,
@@ -525,6 +547,21 @@ function update() {
     gameState.visual.legAngle,
     targetLegAngle,
     0.2
+  );
+  gameState.visual.armSpread = lerp(
+    gameState.visual.armSpread,
+    targetArmSpread,
+    0.2
+  );
+  gameState.visual.poleSpread = lerp(
+    gameState.visual.poleSpread,
+    targetPoleSpread,
+    0.2
+  );
+  gameState.visual.spreadDirection = lerp(
+    gameState.visual.spreadDirection,
+    targetSpreadDirection,
+    0.25
   );
 
   gameState.patrolY = clamp(
