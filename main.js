@@ -506,7 +506,7 @@ function update() {
       : 0;
   const targetArmSpread = turningDirection !== 0 ? 1 : 0;
   const targetPoleSpread = turningDirection !== 0 ? 1.1 : 0;
-  const targetSpreadDirection = turningDirection;
+  const targetSpreadDirection = -turningDirection;
 
   gameState.visual.bodyAngle = lerp(
     gameState.visual.bodyAngle,
