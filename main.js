@@ -337,8 +337,8 @@ function drawPatrol(x, y, scale) {
   const armLength = 18;
   const armWidth = 12;
   const armTilt = 0.14;
-  const baseSpread = armSpread * 0.45;
-  const externalBias = 0.16 * armSpread;
+  const baseSpread = armSpread * 0.5;
+  const externalBias = 0.18 * armSpread;
   const turnDir = spreadDirection;
   let leftHand = { x: -9, y: -8 + crouchOffset };
   let rightHand = { x: 9, y: -6 + crouchOffset };
@@ -360,9 +360,13 @@ function drawPatrol(x, y, scale) {
     }
     ctx.restore();
 
+    const outwardBoost = 4 + armSpread * 5;
+    const extraOutward = turnDir * side > 0 ? armSpread * 2 : 0;
     return {
       x:
-        shoulderX - Math.sin(angle) * armLength + side * armSpread * 3.5,
+        shoulderX -
+        Math.sin(angle) * armLength +
+        side * (outwardBoost + extraOutward),
       y: shoulderY + Math.cos(angle) * armLength - armSpread * 1.2,
     };
   }
