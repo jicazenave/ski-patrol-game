@@ -481,9 +481,9 @@ function update() {
   const targetCrouchOffset = isDescending ? 10 : 0;
   const targetHeadDrop = isDescending ? 6 : 0;
   const targetBodyOffsetX = gameState.keys.right
-    ? 10
+    ? 14
     : gameState.keys.left
-      ? -10
+      ? -14
       : 0;
 
   gameState.visual.bodyAngle = lerp(
